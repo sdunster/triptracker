@@ -16,30 +16,37 @@ Meteor.startup(function () {
 			position: google.maps.ControlPosition.TOP_RIGHT
 		}
 	}
-	
+
 	var map = new google.maps.Map($("#map").get(0), opts);
-	
+
 	Meteor.autorun(function () {
-		var checkin = Checkins.findOne({}, {
-			sort: [
-				["createdAt", "desc"]
-			]
-		});
-		
+		var checkin = Checkins.findOne({}, {sort: [["createdAt", "desc"]]});
+
+		// if the last checkin has coords then centre map on it
 		if(checkin && checkin.venue && checkin.venue.location &&
 				checkin.venue.location.lat && checkin.venue.location.lng)
-			map.panTo(new google.maps.LatLng(e.venue.location.lat, e.venue.location.lng - 10))
+			map.panTo(new google.maps.LatLng(checkin.venue.location.lat, checkin.venue.location.lng - 10))
 	})
-	
+
 	Meteor.autorun(function () {
-		for (var checkins = [], n = Checkins.find({}, {sort: [["createdAt", "desc"]]}), r = 0; checkins.length > r; r++) checkins[r].setMap(null);
-		checkins = [], n.forEach(function (n) {
-			if (n && n.venue && n.venue.location && n.venue.location.lat && n.venue.location.lng) {
-				var r = new google.maps.Marker({
-					position: new google.maps.LatLng(n.venue.location.lat, n.venue.location.lng),
-					title: n.venue.name
+		var markers = []
+		var checkins = Checkins.find({}, {sort: [["createdAt", "desc"]]})
+
+		// clear existing markers
+		for(var i in markers) {
+			markers[i].setMap(null);
+		}
+
+		// create markers for each checkin
+		checkins.forEach(function (checkin) {
+			if(checkin && checkin.venue && checkin.venue.location &&
+					checkin.venue.location.lat && checkin.venue.location.lng) {
+				var marker = new google.maps.Marker({
+					position: new google.maps.LatLng(checkin.venue.location.lat, checkin.venue.location.lng),
+					title: checkin.venue.name
 				});
-				r.setMap(map), e.push(r)
+				marker.setMap(map);
+				markers.push(marker);
 			}
 		})
 	})
