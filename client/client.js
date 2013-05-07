@@ -1,43 +1,3 @@
-/*
-
-function () {
-	Meteor.startup(function () {
-		document.body.appendChild(Spark.render(Meteor._def_template(null, Handlebars.json_ast_to_func(['<div class="map-container">\n  <div id="map"></div>\n  </div>\n	 \n	 <ul class="sidebar">\n	   \n	 <li>\n		 <header>\n		<h1>Sam and Rach In Europe</h1>\n	   </header>\n		<article>\n		<div><a href="https://www.icloud.com/photostream/#A2532ODWxY9J5">Photo Stream</a></div>\n			<div><a href="http://twitter.com/sdunster">Twitter</a></div>\n		   <div><a href="http://foursquare.com/sdunster">Foursquare</a></div>\n		 </article>\n	 </li>\n	\n	', [">", "checkins"], "\n	\n  </ul>"]))))
-	}), Meteor._def_template("checkins", Handlebars.json_ast_to_func([
-		["#", [
-				[0, "each"],
-				[0, "checkins"]
-			],
-			["\n	", [">", "checkin"], "\n  "]
-		]
-	])), Meteor._def_template("checkin", Handlebars.json_ast_to_func(['<li>\n  	  <header>\n  		   <img src="', ["{", [
-				[0, "categoryImg"]
-			]], '" class="icon" />\n  		   <div class="right">', ["{", [
-				[0, "category"]
-			]], "</div>\n		  <h2>", ["{", [
-				[0, "venue"]
-			]], '</h2>\n  		   <div class="right">', ["{", [
-				[0, "time"]
-			]], "</div>\n  		<div>", ["{", [
-				[0, "location"]
-			]], "</div>\n  	  </header>\n  	  ", ["#", [
-				[0, "if"],
-				[0, "hasInfo"]
-			],
-			["\n  		 <article>\n		 ", ["{", [
-						[0, "comment"]
-					]], "\n		", ["#", [
-						[0, "if"],
-						[0, "hasPhoto"]
-					],
-					['\n		   <img src="', ["{", [
-								[0, "photo"]
-							]], '" />\n		']
-				], "\n		  </article>\n	 		"]
-		], "\n	</li>"]))
-
-
-*/
 
 Meteor.subscribe("checkins")
 
@@ -129,7 +89,7 @@ Template.checkin.category = function () {
 
 Template.checkin.categoryImg = function () {
 	for (var i in this.venue.categories) {
-		var category = this.venue.categories[e];
+		var category = this.venue.categories[i];
 		if (category.primary) return category.icon.prefix + "bg_32" + category.icon.suffix
 	}
 }

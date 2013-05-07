@@ -1,13 +1,52 @@
 <head>
-  <title>europe</title>
+  <title>Sam &amp; Rach In Europe</title>
+  <script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?key=AIzaSyCecLqoAWxbOQgLwbLpvOGK9Ei4hnwDUZI&sensor=false"></script>
 </head>
 
 <body>
-  {{> hello}}
+  <div class="map-container">
+    <div id="map"></div>
+  </div>
+
+  <ul class="sidebar">
+    <li>
+      <header>
+        <h1>Sam and Rach In Europe</h1>
+      </header>
+      <article>
+        <div><a href="https://www.icloud.com/photostream/#A2532ODWxY9J5">Photo Stream</a></div>
+        <div><a href="http://twitter.com/sdunster">Twitter</a></div>
+        <div><a href="http://foursquare.com/sdunster">Foursquare</a></div>
+      </article>
+    </li>
+
+    {{> checkins}}
+  </ul>
 </body>
 
-<template name="hello">
-  <h1>Hello World!</h1>
-  {{greeting}}
-  <input type="button" value="Click" />
+<template name="checkins">
+  {{#each checkins}}
+    {{> checkin}}
+  {{/each}}
 </template>
+
+<template name="checkin">
+  <li>
+    <header>
+      <img src="{{categoryImg}}" class="icon" />
+      <div class="right">{{category}}</div>
+      <h2>{{venue}}</h2>
+      <div class="right">{{time}}</div>
+      <div>{{location}}</div>
+    </header>
+    {{#if hasInfo}}
+      <article>
+        {{comment}}
+        {{#if hasPhoto}}
+          <img src="{{photo}}" />
+        {{/if}}
+      </article>
+    {{/if}}
+  </li>
+</template>
+
