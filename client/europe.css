@@ -1,91 +1,91 @@
 /* CSS declarations go here */
 
 body {
-    font-family: sans-serif
+	font-family: sans-serif
 }
 
 h1,
 h2,
 h3,
 h4 {
-    margin: 0;
-    padding: 0;
+	margin: 0;
+	padding: 0;
 }
 
 div.map-container {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
 }
 
 div.map-container div#map {
-    width: 100%;
-    height: 100%;
-    background-color: #a7c3ff;
+	width: 100%;
+	height: 100%;
+	background-color: #a7c3ff;
 }
 
 ul.sidebar {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 50%;
-    max-width: 400px;
-    min-width: 300px;
-    list-style-type: none;
-    margin: 0;
-    padding: 0;
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 50%;
+	max-width: 400px;
+	min-width: 300px;
+	list-style-type: none;
+	margin: 0;
+	padding: 0;
 }
 
 ul.sidebar>li {
-    margin: 20px;
-    padding: 0;
-    box-shadow: 0 5px 5px #999;
-    border: 1px solid #CCC;
+	margin: 20px;
+	padding: 0;
+	box-shadow: 0 5px 5px #999;
+	border: 1px solid #CCC;
 }
 
 ul.sidebar>li>header {
-    margin: 0;
-    padding: 10px;
-    background-color: rgba(231,231,231,.9);
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    overflow: hidden;
+	margin: 0;
+	padding: 10px;
+	background-color: rgba(231,231,231,.9);
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	overflow: hidden;
 }
 
 ul.sidebar>li>header>h1 {
-    font-size: 1.75em
+	font-size: 1.75em
 }
 
 ul.sidebar>li>header>h2 {
-    font-size: 1.0em
+	font-size: 1.0em
 }
 
 ul.sidebar>li>header>div {
-    font-size: .75em
+	font-size: .75em
 }
 
 ul.sidebar>li>header>img.icon {
-    float: left;
-    margin-right: 8px;
+	float: left;
+	margin-right: 8px;
 }
 
 ul.sidebar>li>header div.right {
-    float: right
+	float: right
 }
 
 ul.sidebar>li>article {
-    border-top: 1px solid #CCC;
-    background-color: rgba(255,255,255,.90);
-    padding: 10px;
-    font-size: 1.0em;
+	border-top: 1px solid #CCC;
+	background-color: rgba(255,255,255,.90);
+	padding: 10px;
+	font-size: 1.0em;
 }
 
 ul.sidebar>li>article img {
-    box-shadow: 0 2px 2px #666;
-    margin-top: 10px;
-    text-align: center;
-    position: relative;
-    left: -20px;
+	box-shadow: 0 2px 2px #666;
+	margin-top: 10px;
+	text-align: center;
+	position: relative;
+	left: -20px;
 }
