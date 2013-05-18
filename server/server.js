@@ -1,16 +1,16 @@
 var Fiber = Npm.require('fibers')
 var connect = Npm.require('connect')
 
-var code = '';
-var accessToken = ''
-
 var foursquare = Foursquare({
 	'secrets' : {
-		'clientId' : '',
-		'clientSecret' : '',
-		'redirectUrl' : ''
+		'clientId' : Config.foursquare.clientId,
+		'clientSecret' : Config.foursquare.clientSecret,
+		'redirectUrl' : Config.foursquare.redirectUrl
 	}
 })
+
+var code = Config.foursquare.code;
+var accessToken = Config.foursquare.accessToken;
 
 /*
 foursquare.getAccessToken({
