@@ -27,6 +27,9 @@ foursquare.getAccessToken({
   });
 */
 
+Meteor.publish("checkins", function() {
+	return Checkins.find({})
+})
 
 var app = __meteor_bootstrap__.app;
 var router = connect.middleware.router(function(route) {
