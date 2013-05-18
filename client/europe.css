@@ -42,7 +42,10 @@ ul.sidebar>li {
 	margin: 20px;
 	padding: 0;
 	box-shadow: 0 5px 5px #999;
-	border: 1px solid #CCC;
+	border: 2px solid #CCC;
+}
+ul.sidebar>li.selected {
+	border: 2px solid rgba(99,130,255,1);
 }
 
 ul.sidebar>li>header {

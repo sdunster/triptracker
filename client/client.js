@@ -53,15 +53,16 @@ Meteor.startup(function () {
 })
 
 Template.checkins.checkins = function () {
-	return Checkins.find({}, {
-		sort: [
-			["createdAt", "desc"]
-		]
-	})
+	return Checkins.find({}, {sort: [["createdAt", "desc"]]})
 }
 
 Template.checkins.count = function () {
 	return Checkins.find({}).count()
+}
+
+Template.checkin.selected = function() {
+	// stub
+	return false;
 }
 
 Template.checkin.venue = function () {

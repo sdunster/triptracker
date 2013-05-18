@@ -31,7 +31,11 @@
 </template>
 
 <template name="checkin">
+  {{#if selected}}
+  <li class="selected">
+  {{else}}
   <li>
+  {{/if}}
     <header>
       <img src="{{categoryImg}}" class="icon" />
       <div class="right">{{category}}</div>
@@ -49,4 +53,3 @@
     {{/if}}
   </li>
 </template>
-
