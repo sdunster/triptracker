@@ -52,6 +52,35 @@ Meteor.startup(function () {
 	})
 })
 
+jQuery.fn.visible = function() {
+	var elem = $(this[0])
+	
+    var docViewTop = $(window).scrollTop();
+    var docViewBottom = docViewTop + $(window).height();
+
+    var elemTop = $(elem).offset().top;
+    var elemBottom = elemTop + $(elem).height();
+
+    return ((elemBottom <= docViewBottom) && (elemTop >= docViewTop));
+}
+
+jQuery.fn.centred = function() {
+	var elem = $(this[0])
+	
+    var centre = $(window).scrollTop() + ($(window).height() / 2);
+
+    var elemTop = $(elem).offset().top;
+    var elemBottom = elemTop + $(elem).height();
+
+    return ((elemBottom >= centre) && (elemTop <= centre));
+}
+
+$(window).scroll(function() {
+	$('ul.sidebar > li').each(function() {
+		$(this).toggleClass('selected',$(this).centred())
+	})
+});
+
 Template.checkins.checkins = function () {
 	return Checkins.find({}, {sort: [["createdAt", "desc"]]})
 }
