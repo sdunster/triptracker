@@ -1,15 +1,62 @@
 
 Meteor.subscribe("checkins")
 
+var map;
+
+jQuery.fn.visible = function() {
+	var elem = $(this[0])
+	
+    var docViewTop = $(window).scrollTop();
+    var docViewBottom = docViewTop + $(window).height();
+
+    var elemTop = $(elem).offset().top;
+    var elemBottom = elemTop + $(elem).height();
+
+    return ((elemBottom <= docViewBottom) && (elemTop >= docViewTop));
+}
+
+jQuery.fn.centred = function() {
+	var elem = $(this[0])
+	
+    var centre = $(window).scrollTop() + ($(window).height() / 2);
+
+    var elemTop = $(elem).offset().top;
+    var elemBottom = elemTop + $(elem).height();
+
+    return ((elemBottom >= centre) && (elemTop <= centre));
+}
+
+var updateSelection = function() {	
+	$('ul.sidebar > li').each(function() {
+		$(this).toggleClass('selected',$(this).centred())
+		
+		if($(this).centred()) {
+			var id = $(this).data('id')
+			var checkin = Checkins.findOne({id: id});
+			
+			if(checkin && checkin.venue && checkin.venue.location &&
+					checkin.venue.location.lat && checkin.venue.location.lng) {
+			    var scale = Math.pow(2,map.getZoom());
+				var offsetx = -($('ul.sidebar').width() / 2) / scale;
+				var projection = map.getProjection();
+				var pxlocation = projection.fromLatLngToPoint(new google.maps.LatLng(checkin.venue.location.lat, checkin.venue.location.lng))
+				map.panTo(projection.fromPointToLatLng(new google.maps.Point(pxlocation.x + offsetx, pxlocation.y)));
+			}
+		}
+	})
+}
+
+
 Meteor.startup(function () {
 	var opts = {
 		center: new google.maps.LatLng(48, -10),
-		zoom: 4,
+		zoom: 15,
 		disableDefaultUI: true,
 		draggable: false,
 		scrollwheel: false,
 		disableDoubleClickZoom: true,
-		mapTypeId: google.maps.MapTypeId.TERRAIN,
+		//mapTypeId: google.maps.MapTypeId.TERRAIN,
+		mapTypeId: google.maps.MapTypeId.ROADMAP,
 		zoomControl: true,
 		zoomControlOptions: {
 			style: google.maps.ZoomControlStyle.SMALL,
@@ -17,15 +64,18 @@ Meteor.startup(function () {
 		}
 	}
 
-	var map = new google.maps.Map($("#map").get(0), opts);
+	//google.maps.visualRefresh = true;
+	map = new google.maps.Map($("#map").get(0), opts);
+	
+	// recenter map after zoom in/out
+	google.maps.event.addListener(map, 'zoom_changed', updateSelection);
 
 	Meteor.autorun(function () {
-		var checkin = Checkins.findOne({}, {sort: [["createdAt", "desc"]]});
+		Checkins.find({});
 
-		// if the last checkin has coords then centre map on it
-		if(checkin && checkin.venue && checkin.venue.location &&
-				checkin.venue.location.lat && checkin.venue.location.lng)
-			map.panTo(new google.maps.LatLng(checkin.venue.location.lat, checkin.venue.location.lng - 10))
+		// this should rerun whenever checkins changes
+		// TODO: find better way to do this
+		updateSelection();
 	})
 
 	Meteor.autorun(function () {
@@ -52,34 +102,8 @@ Meteor.startup(function () {
 	})
 })
 
-jQuery.fn.visible = function() {
-	var elem = $(this[0])
-	
-    var docViewTop = $(window).scrollTop();
-    var docViewBottom = docViewTop + $(window).height();
-
-    var elemTop = $(elem).offset().top;
-    var elemBottom = elemTop + $(elem).height();
-
-    return ((elemBottom <= docViewBottom) && (elemTop >= docViewTop));
-}
-
-jQuery.fn.centred = function() {
-	var elem = $(this[0])
-	
-    var centre = $(window).scrollTop() + ($(window).height() / 2);
-
-    var elemTop = $(elem).offset().top;
-    var elemBottom = elemTop + $(elem).height();
-
-    return ((elemBottom >= centre) && (elemTop <= centre));
-}
-
-$(window).scroll(function() {
-	$('ul.sidebar > li').each(function() {
-		$(this).toggleClass('selected',$(this).centred())
-	})
-});
+$(window).scroll(updateSelection);
+$(window).resize(updateSelection);
 
 Template.checkins.checkins = function () {
 	return Checkins.find({}, {sort: [["createdAt", "desc"]]})
@@ -89,9 +113,8 @@ Template.checkins.count = function () {
 	return Checkins.find({}).count()
 }
 
-Template.checkin.selected = function() {
-	// stub
-	return false;
+Template.checkin.id = function() {
+	return this.id;
 }
 
 Template.checkin.venue = function () {
