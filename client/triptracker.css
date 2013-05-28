@@ -26,16 +26,45 @@ div.map-container div#map {
 	background-color: #a7c3ff;
 }
 
+body > header {
+	z-index: 1;
+	position: fixed;
+	top: -10px;
+	left: -10px;
+	right: -10px;
+	background-color: black;
+	box-shadow: 0 5px 5px black;
+	padding: 15px 15px 2px 15px;
+	color: white;
+}
+
+body > header h1 {
+	float: left;
+	font-size: 1em;
+}
+
+body > header div {
+	float: right;
+	font-size: 1em;
+}
+
+body > header a {
+	color: white;
+	text-decoration: none;
+}
+
+body > header a:hover {
+	text-decoration: underline;
+}
+
 ul.sidebar {
 	position: absolute;
 	top: 0;
 	left: 0;
-	width: 50%;
-	max-width: 400px;
-	min-width: 300px;
+	width: 400px;
 	list-style-type: none;
-	margin: 0;
-	padding: 0;
+	margin: 40% 0 0 0;
+	padding: 0 0 40% 0;
 }
 
 ul.sidebar>li {

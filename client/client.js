@@ -1,7 +1,8 @@
 
 Meteor.subscribe("checkins")
 
-var map;
+var Map;
+var Markers = {};
 
 jQuery.fn.visible = function() {
 	var elem = $(this[0])
@@ -36,16 +37,66 @@ var updateSelection = function() {
 			
 			if(checkin && checkin.venue && checkin.venue.location &&
 					checkin.venue.location.lat && checkin.venue.location.lng) {
-			    var scale = Math.pow(2,map.getZoom());
+			    var scale = Math.pow(2,Map.getZoom());
 				var offsetx = -($('ul.sidebar').width() / 2) / scale;
-				var projection = map.getProjection();
-				var pxlocation = projection.fromLatLngToPoint(new google.maps.LatLng(checkin.venue.location.lat, checkin.venue.location.lng))
-				map.panTo(projection.fromPointToLatLng(new google.maps.Point(pxlocation.x + offsetx, pxlocation.y)));
+				var projection = Map.getProjection();
+
+				var whenMapIsReady = function() {
+					var pxlocation = projection.fromLatLngToPoint(new google.maps.LatLng(checkin.venue.location.lat, checkin.venue.location.lng))
+					Map.panTo(projection.fromPointToLatLng(new google.maps.Point(pxlocation.x + offsetx, pxlocation.y)));
+				}
+
+				// if projection is null then the map probably isn't ready yet			
+				if(projection) {
+					whenMapIsReady();
+				}
+				else {
+					google.maps.event.addListenerOnce(Map, 'idle', whenMapIsReady);
+				}
 			}
 		}
 	})
 }
 
+var updateMarkers = function() {
+	var checkins = Checkins.find({}, {sort: [["createdAt", "desc"]]})
+	var venueIds = [];
+
+	// create markers for each checkin, but only one for each venue
+	checkins.forEach(function (checkin) {		
+		if(checkin && checkin.venue && checkin.venue.location &&
+				checkin.venue.location.lat && checkin.venue.location.lng) {
+			
+			// add this to our list of current venue IDs (venues not in this array will have their markers purged)
+			if(!_.contains(venueIds, checkin.venue.id))
+				venueIds.push(checkin.venue.id);
+			
+			// if marker doesn't already exist...
+			if(!Markers[checkin.venue.id]) {
+				Markers[checkin.venue.id] = new google.maps.Marker({
+					position: new google.maps.LatLng(checkin.venue.location.lat, checkin.venue.location.lng),
+					title: checkin.venue.name
+				});
+				Markers[checkin.venue.id].setMap(Map);
+			}
+		}
+	})
+	
+	// check to see if any markers need to be deleted
+	for(var id in Markers) {
+		if(!_.contains(venueIds, id)) {
+			console.log("Marker deleted: "+Markers[id].getTitle())
+			Markers[id].setMap(null);
+			delete Markers[id];
+		}
+	}
+}
+
+var resize = function() {
+	//debugger;
+	//$('ul.sidebar > li.header').style("padding-bottom", $(window).height() / 2);
+	updateSelection();
+}
 
 Meteor.startup(function () {
 	var opts = {
@@ -60,12 +111,12 @@ Meteor.startup(function () {
 		zoomControl: true,
 		zoomControlOptions: {
 			style: google.maps.ZoomControlStyle.SMALL,
-			position: google.maps.ControlPosition.TOP_RIGHT
+			position: google.maps.ControlPosition.RIGHT_CENTER
 		}
 	}
 
 	//google.maps.visualRefresh = true;
-	map = new google.maps.Map($("#map").get(0), opts);
+	Map = new google.maps.Map($("#map").get(0), opts);
 	
 	// recenter map after zoom in/out
 	google.maps.event.addListener(map, 'zoom_changed', updateSelection);
@@ -78,32 +129,16 @@ Meteor.startup(function () {
 		updateSelection();
 	})
 
+	// update markers whenever checkins changes
 	Meteor.autorun(function () {
-		var markers = []
-		var checkins = Checkins.find({}, {sort: [["createdAt", "desc"]]})
-
-		// clear existing markers
-		for(var i in markers) {
-			markers[i].setMap(null);
-		}
-
-		// create markers for each checkin
-		checkins.forEach(function (checkin) {
-			if(checkin && checkin.venue && checkin.venue.location &&
-					checkin.venue.location.lat && checkin.venue.location.lng) {
-				var marker = new google.maps.Marker({
-					position: new google.maps.LatLng(checkin.venue.location.lat, checkin.venue.location.lng),
-					title: checkin.venue.name
-				});
-				marker.setMap(map);
-				markers.push(marker);
-			}
-		})
+		updateMarkers();
 	})
+	
+	resize();
 })
 
 $(window).scroll(updateSelection);
-$(window).resize(updateSelection);
+$(window).resize(resize);
 
 Template.checkins.checkins = function () {
 	return Checkins.find({}, {sort: [["createdAt", "desc"]]})

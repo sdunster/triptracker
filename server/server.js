@@ -85,6 +85,9 @@ function syncCheckins() {
 
 Meteor.startup(function () {
 	syncCheckins()
+	AWS.listBucket('sdunster-europe', function(objects) {
+		console.log(objects);
+	})
 	
 	// resync every 15 mins
 	Meteor.setInterval(syncCheckins, 1000 * 60 * 15);
