@@ -92,12 +92,6 @@ var updateMarkers = function() {
 	}
 }
 
-var resize = function() {
-	//debugger;
-	//$('ul.sidebar > li.header').style("padding-bottom", $(window).height() / 2);
-	updateSelection();
-}
-
 Meteor.startup(function () {
 	var opts = {
 		center: new google.maps.LatLng(48, -10),
@@ -133,12 +127,10 @@ Meteor.startup(function () {
 	Meteor.autorun(function () {
 		updateMarkers();
 	})
-	
-	resize();
 })
 
 $(window).scroll(updateSelection);
-$(window).resize(resize);
+$(window).resize(updateSelection);
 
 Template.checkins.checkins = function () {
 	return Checkins.find({}, {sort: [["createdAt", "desc"]]})
