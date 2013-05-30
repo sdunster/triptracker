@@ -142,7 +142,7 @@ Meteor.startup(function () {
 	Map.secondaryMarker = makeMarker('666666');
 	
 	// recenter map after zoom in/out
-	google.maps.event.addListener(map, 'zoom_changed', updateSelection);
+	google.maps.event.addListener(Map, 'zoom_changed', updateSelection);
 
 	Meteor.autorun(function () {
 		Checkins.find({});
