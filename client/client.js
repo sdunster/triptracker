@@ -18,17 +18,6 @@ jQuery.fn.visible = function() {
     return ((elemBottom <= docViewBottom) && (elemTop >= docViewTop));
 }
 
-jQuery.fn.centred = function() {
-	var elem = $(this[0])
-	
-    var centre = $(window).scrollTop() + ($(window).height() / 2);
-
-    var elemTop = $(elem).offset().top;
-    var elemBottom = elemTop + $(elem).height();
-
-    return ((elemBottom >= centre) && (elemTop <= centre));
-}
-
 var makeMarker = function(color) {
 	return new google.maps.MarkerImage("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=%E2%80%A2|" + color,
         new google.maps.Size(21, 34),
@@ -48,8 +37,6 @@ var updateSelection = function() {
 	var smallestDistance = 0;
 	var center = $(window).scrollTop() + ($(window).height() / 2);
 	
-	debugger;
-
 	// find the item that is closest to the centre of the screen
 	$('ul.sidebar > li').each(function() {
 		var elemCenter = $(this).offset().top + ($(this).height()/2);
