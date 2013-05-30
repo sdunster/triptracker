@@ -1,8 +1,10 @@
 
 Meteor.subscribe("checkins")
+Meteor.subscribe("photos")
 
 var Map;
 var Markers = {};
+var SelectedVenue;
 
 jQuery.fn.visible = function() {
 	var elem = $(this[0])
@@ -27,6 +29,20 @@ jQuery.fn.centred = function() {
     return ((elemBottom >= centre) && (elemTop <= centre));
 }
 
+var makeMarker = function(color) {
+	return new google.maps.MarkerImage("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=%E2%80%A2|" + color,
+        new google.maps.Size(21, 34),
+        new google.maps.Point(0,0),
+        new google.maps.Point(10, 34));
+}
+
+var makeMarkerShadow = function() {
+    return new google.maps.MarkerImage("http://chart.apis.google.com/chart?chst=d_map_pin_shadow",
+	    new google.maps.Size(40, 37),
+	    new google.maps.Point(0, 0),
+	    new google.maps.Point(12, 35));
+}
+
 var updateSelection = function() {	
 	$('ul.sidebar > li').each(function() {
 		$(this).toggleClass('selected',$(this).centred())
@@ -44,6 +60,15 @@ var updateSelection = function() {
 				var whenMapIsReady = function() {
 					var pxlocation = projection.fromLatLngToPoint(new google.maps.LatLng(checkin.venue.location.lat, checkin.venue.location.lng))
 					Map.panTo(projection.fromPointToLatLng(new google.maps.Point(pxlocation.x + offsetx, pxlocation.y)));
+					if(SelectedVenue != checkin.venue.id) {
+						if(Markers[SelectedVenue]) {
+							Markers[SelectedVenue].setIcon(Map.secondaryMarker)
+						}
+						SelectedVenue = checkin.venue.id;
+						if(Markers[SelectedVenue]) {
+							Markers[SelectedVenue].setIcon(Map.primaryMarker)
+						}
+					}
 				}
 
 				// if projection is null then the map probably isn't ready yet			
@@ -72,10 +97,11 @@ var updateMarkers = function() {
 				venueIds.push(checkin.venue.id);
 			
 			// if marker doesn't already exist...
-			if(!Markers[checkin.venue.id]) {
+			if(!Markers[checkin.venue.id]) {    			
 				Markers[checkin.venue.id] = new google.maps.Marker({
 					position: new google.maps.LatLng(checkin.venue.location.lat, checkin.venue.location.lng),
-					title: checkin.venue.name
+					title: checkin.venue.name,
+					icon: Map.secondaryMarker
 				});
 				Markers[checkin.venue.id].setMap(Map);
 			}
@@ -111,6 +137,9 @@ Meteor.startup(function () {
 
 	//google.maps.visualRefresh = true;
 	Map = new google.maps.Map($("#map").get(0), opts);
+	
+	Map.primaryMarker = makeMarker('FE7569');
+	Map.secondaryMarker = makeMarker('666666');
 	
 	// recenter map after zoom in/out
 	google.maps.event.addListener(map, 'zoom_changed', updateSelection);
