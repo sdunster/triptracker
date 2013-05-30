@@ -43,44 +43,61 @@ var makeMarkerShadow = function() {
 	    new google.maps.Point(12, 35));
 }
 
-var updateSelection = function() {	
+var updateSelection = function() {
+	var closestItem = null;
+	var smallestDistance = 0;
+	var center = $(window).scrollTop() + ($(window).height() / 2);
+	
+	debugger;
+
+	// find the item that is closest to the centre of the screen
 	$('ul.sidebar > li').each(function() {
-		$(this).toggleClass('selected',$(this).centred())
+		var elemCenter = $(this).offset().top + ($(this).height()/2);
+		var distanceFromCenter = Math.abs(center - elemCenter);
 		
-		if($(this).centred()) {
-			var id = $(this).data('id')
-			var checkin = Checkins.findOne({id: id});
-			
-			if(checkin && checkin.venue && checkin.venue.location &&
-					checkin.venue.location.lat && checkin.venue.location.lng) {
-			    var scale = Math.pow(2,Map.getZoom());
-				var offsetx = -($('ul.sidebar').width() / 2) / scale;
-				var projection = Map.getProjection();
+		if(closestItem == null || smallestDistance > distanceFromCenter) {
+			closestItem = this;
+			smallestDistance = distanceFromCenter;
+		}
+	});
+	
+	// highlight
+	$('ul.sidebar > li.selected').toggleClass('selected', false);
+	$(closestItem).toggleClass('selected', true);
+	
+	// find associated checkin in DB
+	var id = $(closestItem).data('id')
+	var checkin = Checkins.findOne({id: id});
+	
+	if(checkin && checkin.venue && checkin.venue.location &&
+			checkin.venue.location.lat && checkin.venue.location.lng) {
+	    var scale = Math.pow(2,Map.getZoom());
+		var offsetx = -($('ul.sidebar').width() / 2) / scale;
 
-				var whenMapIsReady = function() {
-					var pxlocation = projection.fromLatLngToPoint(new google.maps.LatLng(checkin.venue.location.lat, checkin.venue.location.lng))
-					Map.panTo(projection.fromPointToLatLng(new google.maps.Point(pxlocation.x + offsetx, pxlocation.y)));
-					if(SelectedVenue != checkin.venue.id) {
-						if(Markers[SelectedVenue]) {
-							Markers[SelectedVenue].setIcon(Map.secondaryMarker)
-						}
-						SelectedVenue = checkin.venue.id;
-						if(Markers[SelectedVenue]) {
-							Markers[SelectedVenue].setIcon(Map.primaryMarker)
-						}
-					}
+		// centre map and highlight marker
+		var whenMapIsReady = function() {
+			var projection = Map.getProjection();
+			var pxlocation = projection.fromLatLngToPoint(new google.maps.LatLng(checkin.venue.location.lat, checkin.venue.location.lng))
+			Map.panTo(projection.fromPointToLatLng(new google.maps.Point(pxlocation.x + offsetx, pxlocation.y)));
+			if(SelectedVenue != checkin.venue.id) {
+				if(Markers[SelectedVenue]) {
+					Markers[SelectedVenue].setIcon(Map.secondaryMarker)
 				}
-
-				// if projection is null then the map probably isn't ready yet			
-				if(projection) {
-					whenMapIsReady();
-				}
-				else {
-					google.maps.event.addListenerOnce(Map, 'idle', whenMapIsReady);
+				SelectedVenue = checkin.venue.id;
+				if(Markers[SelectedVenue]) {
+					Markers[SelectedVenue].setIcon(Map.primaryMarker)
 				}
 			}
 		}
-	})
+
+		// if getProjection() is null then the map probably isn't ready yet			
+		if(Map.getProjection()) {
+			whenMapIsReady();
+		}
+		else {
+			google.maps.event.addListenerOnce(Map, 'idle', whenMapIsReady);
+		}
+	}
 }
 
 var updateMarkers = function() {
