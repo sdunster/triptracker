@@ -139,7 +139,7 @@ Meteor.startup(function () {
 		}
 	}
 
-	//google.maps.visualRefresh = true;
+	google.maps.visualRefresh = true;
 	Map = new google.maps.Map($("#map").get(0), opts);
 	
 	Map.primaryMarker = makeMarker('FE7569');
