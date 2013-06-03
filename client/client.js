@@ -1,6 +1,6 @@
 
-Meteor.subscribe("checkins")
-Meteor.subscribe("photos")
+var CheckinSubscription = Meteor.subscribe("checkins")
+var PhotoSubscription = Meteor.subscribe("photos")
 
 var Map;
 var Markers = {};
@@ -165,12 +165,56 @@ Meteor.startup(function () {
 $(window).scroll(updateSelection);
 $(window).resize(updateSelection);
 
-Template.checkins.checkins = function () {
-	return Checkins.find({}, {sort: [["createdAt", "desc"]]})
+Template.entries.entries = function () {
+	// would be nice to do this without storing the entire contents of the DB in memory...
+	var checkins = Checkins.find({}, {sort: [["createdAt", "desc"]]}).fetch();
+	var photos = Photos.find({}, {sort: [["createdAt", "desc"]]}).fetch();
+	var entries = [];
+	
+	for(var i = 0, j = 0; i < checkins.length || j < photos.length; ) {
+		if(i >= checkins.length) {
+			doPhoto();
+			continue;
+		}
+		
+		if(j >= photos.length) {
+			doCheckin();
+			continue;
+		}
+		
+		if(checkins[i].createdAt > photos[j].createdAt.getTime()/1000) {
+			doCheckin();
+		}
+		else {
+			doPhoto();
+		}
+		
+		function doCheckin() {
+			var checkin = checkins[i++];
+			checkin.type = "checkin";
+			entries[entries.length] = checkin;
+		}
+		
+		function doPhoto() {
+			var photo = photos[j++];
+			photo.type = "photo";
+			entries[entries.length] = photo;
+		}
+	}
+	
+	return entries;
 }
 
-Template.checkins.count = function () {
-	return Checkins.find({}).count()
+Template.root.loading = function() {
+	return !CheckinSubscription.ready() || !PhotoSubscription.ready();
+}
+
+Template.entries.checkin = function () {
+	return this.type == "checkin";
+}
+
+Template.entries.photo = function() {
+	return this.type == "photo";
 }
 
 Template.checkin.id = function() {
@@ -225,4 +269,12 @@ Template.checkin.photo = function () {
 
 Template.checkin.address = function () {
 	return this.venue.address
+}
+
+Template.photo.id = function() {
+	return this._id;
+}
+
+Template.photo.photo = function() {
+	return "http://europe-photos.sdunster.com/"+this.key;
 }

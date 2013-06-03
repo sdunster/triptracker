@@ -12,3 +12,6 @@ Config = {
 		accessToken:  '',
 	}
 }
+
+// AWS keyId, secret
+AWS.setCredentials('', '');

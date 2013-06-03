@@ -12,6 +12,18 @@ h4 {
 	padding: 0;
 }
 
+div.loading {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background-color: #DDDDDD;
+	font-size: 48px;
+	text-align: center;
+	padding: 100px 10px;
+}
+
 div.map-container {
 	position: fixed;
 	top: 0;
@@ -124,4 +136,5 @@ ul.sidebar>li>article img {
 	text-align: center;
 	position: relative;
 	left: -20px;
+	max-width: 380px;
 }
