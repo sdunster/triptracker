@@ -247,6 +247,7 @@ Meteor.startup(function () {
 	
 	Meteor.autorun(function() {
 		if(CheckinSubscription.ready() && PhotoSubscription.ready()) {
+			$('#loading_overlay').fadeOut()
 			updateSelection();
 		}
 	});
@@ -303,7 +304,7 @@ Template.root.finishedLoading = function() {
 }
 
 // whenever the entries list is updated we need to recheck the current selection
-Template.entries.render = function() {
+Template.entries.rendered = function() {
 	updateSelection();
 }
 

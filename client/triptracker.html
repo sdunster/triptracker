@@ -5,11 +5,12 @@
 </head>
 
 <body>
+  <div id="loading_overlay">Loading...</div>
+
   {{> root}}
 </body>
 
 <template name="root">
-  <div class="loading" {{#if finishedLoading}}style="display:none"{{/if}}>Loading...</div>
   
   {{#constant}}
   <div class="map-container">
