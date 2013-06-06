@@ -9,24 +9,26 @@
 </body>
 
 <template name="root">
-  {{#if loading}}
-    <div class="loading">Loading...</div>
-  {{else}}
-    <div class="map-container">
-      <div id="map"></div>
-    </div>
-    
-    <header>
-      <h1>Sam and Rach In Europe</h1>
-      <!--
-      <li><a href="https://www.icloud.com/photostream/#A2532ODWxY9J5">Photo Stream</a></li>
-      -->
-      <div><a href="http://twitter.com/sdunster">Twitter</a></li> <a href="http://foursquare.com/sdunster">Foursquare</a></div>
-    </header>
-    
-    <ul class="sidebar">
-      {{> entries}}
-    </ul>
+  <div class="loading" {{#if finishedLoading}}style="display:none"{{/if}}>Loading...</div>
+  
+  {{#constant}}
+  <div class="map-container">
+    <div id="map"></div>
+  </div>
+  {{/constant}}
+  
+  {{#if finishedLoading}}
+  <header>
+    <h1>Sam and Rach In Europe</h1>
+    <!--
+    <li><a href="https://www.icloud.com/photostream/#A2532ODWxY9J5">Photo Stream</a></li>
+    -->
+    <div><a href="http://twitter.com/sdunster">Twitter</a></li> <a href="http://foursquare.com/sdunster">Foursquare</a></div>
+  </header>
+  
+  <ul class="sidebar">
+    {{> entries}}
+  </ul>
   {{/if}}
 </template>
 
@@ -42,7 +44,7 @@
 </template>
 
 <template name="checkin">
-  <li data-id="{{id}}">
+  <li class="checkin" data-id="{{id}}">
     <header>
       <img src="{{categoryImg}}" class="icon" />
       <div class="right">{{category}}</div>
@@ -54,7 +56,7 @@
       <article>
         {{comment}}
         {{#if hasPhoto}}
-          <img src="{{photo}}" />
+          <img src="{{thumb}}" />
         {{/if}}
       </article>
     {{/if}}
@@ -62,9 +64,9 @@
 </template>
 
 <template name="photo">
-  <li data-id="{{id}}">
+  <li class="photo" data-key="{{key}}">
     <article>
-      <img src="{{photo}}" />
+      <img src="{{thumb}}" />
     </article>
   </li>
 </template>

@@ -172,7 +172,7 @@ function processPhotos() {
 	photos.forEach(function(photo) {
 		Photos.update(photo._id, {$set: {processStartTime: (new Date()).getTime()}})
 		var key = 'photos/original/'+photo.key;
-		console.log("getting obj: "+key)
+
 		AWS.getObject({Bucket: 'sdunster-europe', Key: key}, function(err, data) {
 			if(err) {
 				console.log('S3 getObject error: '+ err)
@@ -193,7 +193,6 @@ function processPhotos() {
 	// no photos to process, wait 1 minute before trying again, only if this is the last thread
 	if(photos.count() == 0 && imagesBeingProcessed == 0) {
 		Meteor.setTimeout(processPhotos, 1000 * 60);
-		console.log("No photos left to process, waiting 60 seconds...");
 	}
 }
 
@@ -208,6 +207,7 @@ function processPhoto(photo, buffer, cb) {
     // of the errors from the two jobs, if there was an error
 	var done = _.after(2, function() {
 		if(cb) cb(error);
+		console.log("Processed photo: "+photo.key)
 	})
 	
 	processPhotoExif(photo, buffer, function(err) {
@@ -268,8 +268,6 @@ function processPhotoExif(photo, buffer, cb) {
 					(lng.value[1] / 60)) *
 					(image.gps.GPSLongitudeRef.value == 'E' ? 1 : -1)
 				}
-				
-				console.log("Coords: "+keys.lat+","+keys.lng)
 			}
 			
 			if(image.exif && image.exif.DateTimeOriginal) {
@@ -280,8 +278,6 @@ function processPhotoExif(photo, buffer, cb) {
 				var time = bits[1].split(":")
 				
 				keys.createdAt = new Date(date[0], date[1], date[2], time[0], time[1], time[2], 0);
-											
-				console.log("Time: "+keys.createdAt)
 			}
 			
 			Photos.update(photo._id, keys);
@@ -298,8 +294,11 @@ function processPhotoExif(photo, buffer, cb) {
 function processPhotoThumb(photo, buffer, cb) {
 	try {
 		var img = new GM(buffer);
-		img.scale(356)
-		img.toBuffer(function(err, buffer) {
+		img
+		.scale(356)
+		.noProfile()
+		.quality(50)
+		.toBuffer(function(err, buffer) {
 			if(err) {
 				console.log('Thumbnail error: '+err);
 				if(cb) cb(err)
@@ -319,7 +318,6 @@ function processPhotoThumb(photo, buffer, cb) {
 					return;
 				}
 				
-				console.log("thumbnail uploaded!"+params.Key);
 				if(cb) cb();
 			});
 			

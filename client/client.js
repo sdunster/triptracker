@@ -1,10 +1,174 @@
-
 var CheckinSubscription = Meteor.subscribe("checkins")
 var PhotoSubscription = Meteor.subscribe("photos")
 
-var Map;
-var Markers = {};
-var SelectedVenue;
+var Map = {
+	map: null,
+	checkinMarkers: {},
+	photoMarkers: {},
+	selectedMarker: null,
+	makeMarker: function(color) {
+		return new google.maps.MarkerImage(
+			"http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=%E2%80%A2|" + color,
+			new google.maps.Size(21, 34),
+			new google.maps.Point(0,0),
+			new google.maps.Point(10, 34));
+	},
+	makeMarkerShadow: function() {
+		return new google.maps.MarkerImage(
+			"http://chart.apis.google.com/chart?chst=d_map_pin_shadow",
+			new google.maps.Size(40, 37),
+			new google.maps.Point(0, 0),
+			new google.maps.Point(12, 35));
+	},
+	onZoom: function(handler) {
+		google.maps.event.addListener(this.map, 'zoom_changed', handler);	
+	},
+	init: function() {
+		var self = this;
+		
+		var opts = {
+			center: new google.maps.LatLng(48, -10),
+			zoom: 15,
+			disableDefaultUI: true,
+			draggable: false,
+			scrollwheel: false,
+			disableDoubleClickZoom: true,
+			//mapTypeId: google.maps.MapTypeId.TERRAIN,
+			mapTypeId: google.maps.MapTypeId.ROADMAP,
+			zoomControl: true,
+			zoomControlOptions: {
+				style: google.maps.ZoomControlStyle.SMALL,
+				position: google.maps.ControlPosition.RIGHT_CENTER
+			}
+		}
+		
+		google.maps.visualRefresh = true;
+		this.map = new google.maps.Map($("#map").get(0), opts);
+		
+		this.icon = {
+			selected: this.makeMarker('FE7569'),
+			checkin: this.makeMarker('666666'),
+			photo: this.makeMarker('669999'),
+			shadow: this.makeMarkerShadow()
+		}
+		
+		// update markers whenever checkins changes
+		Meteor.autorun(function () {
+			self.updateMarkers();
+		})
+	},
+	center: function(lat, lng, cb) {
+	    var scale = Math.pow(2,Map.map.getZoom());
+		var offsetx = -($('ul.sidebar').width() / 2) / scale;
+		var self = this;
+
+		// center map and highlight marker
+		var whenMapIsReady = function() {
+			var projection = self.map.getProjection();
+			var pxlocation = projection.fromLatLngToPoint(new google.maps.LatLng(lat, lng))
+			self.map.panTo(projection.fromPointToLatLng(new google.maps.Point(
+				pxlocation.x + offsetx,
+				pxlocation.y
+			)));
+			
+			if(cb) cb();
+		}
+
+		// if getProjection() is null then the map probably isn't ready yet			
+		if(this.map.getProjection()) {
+			whenMapIsReady();
+		}
+		else {
+			google.maps.event.addListenerOnce(this.map, 'idle', whenMapIsReady);
+		}
+	},
+	selectMarker: function(marker) {
+		if(this.selectedMarker != marker) {
+			if(this.selectedMarker) {
+				this.selectedMarker.setIcon(this.selectedMarker.oldIcon);
+				delete this.selectedMarker.oldIcon;
+			}
+			this.selectedMarker = marker;
+			if(this.selectedMarker) {
+				this.selectedMarker.oldIcon = this.selectedMarker.getIcon();
+				this.selectedMarker.setIcon(this.icon.selected);
+			}
+		}
+	},
+	addMarker: function(lat, lng, icon, title) {
+		var marker = new google.maps.Marker({
+			position: new google.maps.LatLng(lat, lng),
+			title: title,
+			icon: Map.map.secondaryMarker
+		});
+		
+		if(icon)
+			marker.setIcon(icon)
+		
+		if(title)
+			marker.setTitle(title)
+		
+		marker.setMap(this.map);
+		
+		return marker;
+	},
+	updateMarkers: function() {
+		var checkins = Checkins.find({}, {sort: [["createdAt", "desc"]]})
+		var photos = Photos.find({}, {sort:[["createdAt","desc"]]})
+		var venueIds = [];
+		var photoKeys = [];
+		var self = this;
+	
+		// create markers for each checkin, but only one for each venue
+		checkins.forEach(function (checkin) {		
+			if(checkin.venue && checkin.venue.location &&
+					checkin.venue.location.lat && checkin.venue.location.lng) {
+				if(!_.contains(venueIds, checkin.venue.id))
+					venueIds.push(checkin.venue.id);
+				
+				// if marker doesn't already exist...
+				if(!self.checkinMarkers[checkin.venue.id]) {   
+					self.checkinMarkers[checkin.venue.id] = self.addMarker(
+						checkin.venue.location.lat,
+						checkin.venue.location.lng,
+						self.icon.checkin,
+						checkin.venue.name);		
+				}
+			}
+		})
+		
+		// create markers for each photo
+		photos.forEach(function(photo) {
+			if(photo.lat && photo.lng) {
+				if(!_.contains(photoKeys, photo.key))
+					photoKeys.push(photo.key)
+				
+				if(!self.photoMarkers[photo.key]) {
+					self.photoMarkers[photo.key] = self.addMarker(
+						photo.lat,
+						photo.lng,
+						self.icon.photo
+					)
+				}
+			}
+		})
+		
+		// check to see if any markers need to be deleted
+		for(var id in this.checkinMarkers) {
+			if(!_.contains(venueIds, id)) {
+				this.checkinMarkers[id].setMap.map(null);
+				delete this.checkinMarkers[id];
+			}
+		}
+		
+		for(var key in this.photoMarkers) {
+			if(!_.contains(photoKeys, key)) {
+				this.photoMarkers[key].setMap.map(null);
+				delete this.photoMarkers[key];
+			}
+		}
+	}
+}
 
 jQuery.fn.visible = function() {
 	var elem = $(this[0])
@@ -18,26 +182,14 @@ jQuery.fn.visible = function() {
     return ((elemBottom <= docViewBottom) && (elemTop >= docViewTop));
 }
 
-var makeMarker = function(color) {
-	return new google.maps.MarkerImage("http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=%E2%80%A2|" + color,
-        new google.maps.Size(21, 34),
-        new google.maps.Point(0,0),
-        new google.maps.Point(10, 34));
-}
-
-var makeMarkerShadow = function() {
-    return new google.maps.MarkerImage("http://chart.apis.google.com/chart?chst=d_map_pin_shadow",
-	    new google.maps.Size(40, 37),
-	    new google.maps.Point(0, 0),
-	    new google.maps.Point(12, 35));
-}
+var CenteredItem = null;
 
 var updateSelection = function() {
 	var closestItem = null;
 	var smallestDistance = 0;
 	var center = $(window).scrollTop() + ($(window).height() / 2);
 	
-	// find the item that is closest to the centre of the screen
+	// find the item that is closest to the center of the screen
 	$('ul.sidebar > li').each(function() {
 		var elemCenter = $(this).offset().top + ($(this).height()/2);
 		var distanceFromCenter = Math.abs(center - elemCenter);
@@ -48,124 +200,65 @@ var updateSelection = function() {
 		}
 	});
 	
-	// highlight
-	$('ul.sidebar > li.selected').toggleClass('selected', false);
-	$(closestItem).toggleClass('selected', true);
-	
-	// find associated checkin in DB
-	var id = $(closestItem).data('id')
-	var checkin = Checkins.findOne({id: id});
-	
-	if(checkin && checkin.venue && checkin.venue.location &&
-			checkin.venue.location.lat && checkin.venue.location.lng) {
-	    var scale = Math.pow(2,Map.getZoom());
-		var offsetx = -($('ul.sidebar').width() / 2) / scale;
-
-		// centre map and highlight marker
-		var whenMapIsReady = function() {
-			var projection = Map.getProjection();
-			var pxlocation = projection.fromLatLngToPoint(new google.maps.LatLng(checkin.venue.location.lat, checkin.venue.location.lng))
-			Map.panTo(projection.fromPointToLatLng(new google.maps.Point(pxlocation.x + offsetx, pxlocation.y)));
-			if(SelectedVenue != checkin.venue.id) {
-				if(Markers[SelectedVenue]) {
-					Markers[SelectedVenue].setIcon(Map.secondaryMarker)
-				}
-				SelectedVenue = checkin.venue.id;
-				if(Markers[SelectedVenue]) {
-					Markers[SelectedVenue].setIcon(Map.primaryMarker)
-				}
-			}
-		}
-
-		// if getProjection() is null then the map probably isn't ready yet			
-		if(Map.getProjection()) {
-			whenMapIsReady();
-		}
-		else {
-			google.maps.event.addListenerOnce(Map, 'idle', whenMapIsReady);
-		}
+	if(CenteredItem != closestItem) {
+		CenteredItem = closestItem;
+		
+		// highlight
+		$('ul.sidebar > li.selected').toggleClass('selected', false);
+		$(closestItem).toggleClass('selected', true);
+		
+		recenter();
 	}
 }
 
-var updateMarkers = function() {
-	var checkins = Checkins.find({}, {sort: [["createdAt", "desc"]]})
-	var venueIds = [];
+var recenter = function() {
+	var item = CenteredItem;
 
-	// create markers for each checkin, but only one for each venue
-	checkins.forEach(function (checkin) {		
+	// find the checkin in the DB, center map on it's location and highlight it's marker
+	if($(item).hasClass('checkin')) {
+		var id = $(item).data('id')
+		var checkin = Checkins.findOne({id: id});
+			
 		if(checkin && checkin.venue && checkin.venue.location &&
 				checkin.venue.location.lat && checkin.venue.location.lng) {
-			
-			// add this to our list of current venue IDs (venues not in this array will have their markers purged)
-			if(!_.contains(venueIds, checkin.venue.id))
-				venueIds.push(checkin.venue.id);
-			
-			// if marker doesn't already exist...
-			if(!Markers[checkin.venue.id]) {    			
-				Markers[checkin.venue.id] = new google.maps.Marker({
-					position: new google.maps.LatLng(checkin.venue.location.lat, checkin.venue.location.lng),
-					title: checkin.venue.name,
-					icon: Map.secondaryMarker
-				});
-				Markers[checkin.venue.id].setMap(Map);
-			}
+			Map.center(checkin.venue.location.lat, checkin.venue.location.lng);
+			Map.selectMarker(Map.checkinMarkers[checkin.venue.id]);
 		}
-	})
+	}
 	
-	// check to see if any markers need to be deleted
-	for(var id in Markers) {
-		if(!_.contains(venueIds, id)) {
-			console.log("Marker deleted: "+Markers[id].getTitle())
-			Markers[id].setMap(null);
-			delete Markers[id];
+	// find the photo in the DB, center map on it's location and highlight it's marker
+	if($(item).hasClass('photo')) {
+		var key = $(item).data('key')
+		var photo = Photos.findOne({key: key});
+		
+		if(photo && photo.lat && photo.lng) {
+			Map.center(photo.lat, photo.lng);
+			Map.selectMarker(Map.photoMarkers[photo.key]);
 		}
 	}
 }
 
 Meteor.startup(function () {
-	var opts = {
-		center: new google.maps.LatLng(48, -10),
-		zoom: 15,
-		disableDefaultUI: true,
-		draggable: false,
-		scrollwheel: false,
-		disableDoubleClickZoom: true,
-		//mapTypeId: google.maps.MapTypeId.TERRAIN,
-		mapTypeId: google.maps.MapTypeId.ROADMAP,
-		zoomControl: true,
-		zoomControlOptions: {
-			style: google.maps.ZoomControlStyle.SMALL,
-			position: google.maps.ControlPosition.RIGHT_CENTER
+	Map.init();
+	Map.onZoom(recenter);
+
+	$(window).scroll(updateSelection);
+	$(window).resize(updateSelection);
+	
+	Meteor.autorun(function() {
+		if(CheckinSubscription.ready() && PhotoSubscription.ready()) {
+			updateSelection();
 		}
-	}
-
-	google.maps.visualRefresh = true;
-	Map = new google.maps.Map($("#map").get(0), opts);
-	
-	Map.primaryMarker = makeMarker('FE7569');
-	Map.secondaryMarker = makeMarker('666666');
-	
-	// recenter map after zoom in/out
-	google.maps.event.addListener(Map, 'zoom_changed', updateSelection);
-
-	Meteor.autorun(function () {
-		Checkins.find({});
-
-		// this should rerun whenever checkins changes
-		// TODO: find better way to do this
-		updateSelection();
-	})
-
-	// update markers whenever checkins changes
-	Meteor.autorun(function () {
-		updateMarkers();
-	})
+	});
 })
 
-$(window).scroll(updateSelection);
-$(window).resize(updateSelection);
+
+/*********************************
+ * Templates
+ *********************************/
 
 Template.entries.entries = function () {
+	
 	// would be nice to do this without storing the entire contents of the DB in memory...
 	var checkins = Checkins.find({}, {sort: [["createdAt", "desc"]]}).fetch();
 	var photos = Photos.find({}, {sort: [["createdAt", "desc"]]}).fetch();
@@ -205,8 +298,13 @@ Template.entries.entries = function () {
 	return entries;
 }
 
-Template.root.loading = function() {
-	return !CheckinSubscription.ready() || !PhotoSubscription.ready();
+Template.root.finishedLoading = function() {
+	return CheckinSubscription.ready() && PhotoSubscription.ready();
+}
+
+// whenever the entries list is updated we need to recheck the current selection
+Template.entries.render = function() {
+	updateSelection();
 }
 
 Template.entries.checkin = function () {
@@ -262,9 +360,14 @@ Template.checkin.hasPhoto = function () {
 	return this.photos.count > 0
 }
 
-Template.checkin.photo = function () {
+Template.checkin.thumb = function () {
 	var photo = this.photos.items[0];
 	return photo.prefix + "width380" + photo.suffix
+}
+
+Template.checkin.photo = function () {
+	var photo = this.photos.items[0];
+	return photo.prefix + "original" + photo.suffix
 }
 
 Template.checkin.address = function () {
@@ -275,6 +378,14 @@ Template.photo.id = function() {
 	return this._id;
 }
 
+Template.photo.key = function() {
+	return this.key;
+}
+
+Template.photo.thumb = function() {
+	return "http://europe-cdn.sdunster.com/photos/width356/"+this.key;
+}
+
 Template.photo.photo = function() {
-	return "http://europe-photos.sdunster.com/"+this.key;
+	return "http://europe-cdn.sdunster.com/photos/original/"+this.key;
 }

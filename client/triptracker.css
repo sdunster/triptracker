@@ -22,6 +22,7 @@ div.loading {
 	font-size: 48px;
 	text-align: center;
 	padding: 100px 10px;
+	z-index: 1000;
 }
 
 div.map-container {
@@ -30,12 +31,13 @@ div.map-container {
 	left: 0;
 	right: 0;
 	bottom: 0;
+	background-color: red;
 }
 
 div.map-container div#map {
 	width: 100%;
 	height: 100%;
-	background-color: #a7c3ff;
+	/*background-color: #a7c3ff;*/
 }
 
 body > header {
