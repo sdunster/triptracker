@@ -10,13 +10,14 @@ var exportMe = (function() {
 			this.AWS.config.update({accessKeyId: keyId, secretAccessKey: secret})
 			this.s3 = new AWS.S3()
 		},
-		listBucket: function(bucket, callback) {
+		listBucket: function(bucket, prefix, callback) {
 			var items = [];
 			var s3 = this.s3;
 			
 			var fetchSome = function(marker) {
 				var params = {
-					Bucket: bucket
+					Bucket: bucket,
+					Prefix: prefix
 				};
 				
 				if(marker) {
@@ -52,6 +53,16 @@ var exportMe = (function() {
 			var s3 = this.s3;
 			
 			s3.getObject(params, function(err, data) {
+				if(callback)
+					Fiber(function() {
+						callback(err, data)
+					}).run();
+			});
+		},
+		putObject: function(params, callback) {
+			var s3 = this.s3;
+			
+			s3.putObject(params, function(err, data) {
 				if(callback)
 					Fiber(function() {
 						callback(err, data)

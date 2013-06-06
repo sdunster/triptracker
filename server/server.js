@@ -91,7 +91,7 @@ function syncCheckins() {
 }
 
 function syncPhotos(done) {
-	AWS.listBucket('sdunster-europe', function(err, objects) {
+	AWS.listBucket('sdunster-europe', 'photos/original/', function(err, objects) {
 		var existingKeys = [];
 		
 		if(err) {
@@ -102,25 +102,27 @@ function syncPhotos(done) {
 		for(var i in objects) {
 			var obj = objects[i]
 			var doc;
+			var prefix = 'photos/original/';
+			var key = obj.Key.substring(prefix.length);
 			
 			var extensionRegex = /(\.|\/)(gif|jpe?g|png)$/i
 			
-			if(!extensionRegex.test(obj.Key)) {
+			if(!extensionRegex.test(key)) {
 				continue;
 			}
-						
-			existingKeys.push(obj.Key)
+			
+			existingKeys.push(key)
 			
 			var data = {
-				key: obj.Key,
+				key: key,
 				etag: obj.ETag,
 				modified: obj.LastModified,
 				size: obj.Size,
 				processed: false,
 				processStartTime: 0
 			};
-			
-			if(typeof (doc = Photos.findOne({key: obj.Key})) == 'undefined') {
+						
+			if(typeof (doc = Photos.findOne({key: key})) == 'undefined') {
 				// insert fresh, unprocessed record
 				doc = Photos.insert(data);
 			}
@@ -139,6 +141,7 @@ function syncPhotos(done) {
 		Photos.find({}).forEach(function(photo) {
 			if(!_.contains(existingKeys, photo.key)) {
 				Photos.remove(photo._id);
+				console.log("Removing photo from DB because it was removed from S3: "+photo.key)
 			}
 		})
 		
@@ -147,108 +150,185 @@ function syncPhotos(done) {
 	})
 }
 
-var maxConcurrentDownloads = 3;
-var currentDownloads = 0;
+var maxImagesBeingProcessed = 1;
+var imagesBeingProcessed = 0;
 
 function processPhotos() {
-	var earlier = (new Date()).getTime() - 60*1;
-	var photo = Photos.findOne({processed: false, processStartTime: {$lt: earlier}});
+	var earlier = new Date().getTime() - (1000*60*1);
 	
-	if(photo != null && currentDownloads < maxConcurrentDownloads) {
-		currentDownloads++;
-		Photos.update(photo._id, {$set: {processStartTime: (new Date()).getDate()}})
-		AWS.getObject({Bucket: 'sdunster-europe', Key: photo.key}, function(err, data) {
-			currentDownloads--;
-			Meteor.setTimeout(processPhotos, 0);
-			
-			if(err) {
-				console.log('S3 getObject error: '+err)
-				return;
-			}
-			
-			try {
-				new ExifImage({image: data.Body}, function (error, image) {
-					if (error) {
-						console.log('EXIF Error: '+error.message);
-						return;
-					}
-					else {
-						//console.log(image); // Do something with your data!
-						//console.log(image.gps);
-						
-						var keys = {
-							key: photo.key,
-							etag: photo.etag,
-							modified: photo.modified,
-							size: photo.size,
-							processed: true
-						}
-						
-						if(image.gps && image.gps.GPSLatitude && image.gps.GPSLongitude) {
-							var lat = image.gps.GPSLatitude;
-							var lng = image.gps.GPSLongitude;
-							
-							if(lat.components == 3) {
-								keys.lat = (lat.value[0] + 
-									(lat.value[1] / 60) + 
-									(lat.value[2] / 60 / 60)) * 
-									(image.gps.GPSLatitudeRef.value == 'N' ? 1 : -1)
-							}
-							
-							if(lat.components == 2) {
-								keys.lat = (lat.value[0] + 
-								(lat.value[1] / 60)) * 
-								(image.gps.GPSLatitudeRef.value == 'N' ? 1 : -1)
-							}
-							
-							if(lng.components == 3) {
-								keys.lng = (lng.value[0] + 
-								(lng.value[1] / 60) + 
-								(lng.value[2] / 60 / 60)) *
-								(image.gps.GPSLongitudeRef.value == 'E' ? 1 : -1)
-							}
-							
-							if(lng.components == 2) {
-								keys.lng = (lng.value[0] +
-								(lng.value[1] / 60)) *
-								(image.gps.GPSLongitudeRef.value == 'E' ? 1 : -1)
-							}
-							
-							console.log("Coords: "+keys.lat+","+keys.lng)
-						}
-						
-						if(image.exif && image.exif.DateTimeOriginal) {
-							var bits;
-							bits = image.exif.DateTimeOriginal.value.split(" ")
-							
-							var date = bits[0].split(":")
-							var time = bits[1].split(":")
-							
-							keys.createdAt = new Date(date[0], date[1], date[2], time[0], time[1], time[2], 0);
-														
-							console.log("Time: "+keys.createdAt)
-						}
-						
-						Photos.update(photo._id, keys);
-						
-						return;
-					}
-				});
-			} catch (error) {
-				console.log('EXIF Error: '+error);
-			}
-		})
-		
-		Meteor.setTimeout(processPhotos, 0);
+	if(imagesBeingProcessed >= maxImagesBeingProcessed) {
+		console.log('This should not happen! '+imagesBeingProcessed)
 		return;
 	}
 	
-	// no photos to process, wait 1 minute before trying again, only if this is the last thread
-	if(currentDownloads == 0)
-		Meteor.setTimeout(processPhotos, 1000 * 60);
+	// fetch some photos (based upon how many "processors" we have left
+	var remainingProcessors = maxImagesBeingProcessed - imagesBeingProcessed;
+	var photos = Photos.find({processed: false, processStartTime: {$lt: earlier}}, {limit: remainingProcessors});
+	var count = Math.min(photos.count(), remainingProcessors);
 	
-	if(photo == null) {
-		console.log("No photos to process")
+	imagesBeingProcessed += Math.min(photos.count(), remainingProcessors);
+
+	// start up the "jobs" for each photo, marking each as in-progress	
+	photos.forEach(function(photo) {
+		Photos.update(photo._id, {$set: {processStartTime: (new Date()).getTime()}})
+		var key = 'photos/original/'+photo.key;
+		console.log("getting obj: "+key)
+		AWS.getObject({Bucket: 'sdunster-europe', Key: key}, function(err, data) {
+			if(err) {
+				console.log('S3 getObject error: '+ err)
+				imagesBeingProcessed--;
+				Meteor.setTimeout(processPhotos, 0);
+				return;
+			}
+		
+			processPhoto(photo, data.Body, function(err) {
+				imagesBeingProcessed--;
+				Meteor.setTimeout(processPhotos, 0);
+			});			
+		})
+
+		return;
+	});
+	
+	// no photos to process, wait 1 minute before trying again, only if this is the last thread
+	if(photos.count() == 0 && imagesBeingProcessed == 0) {
+		Meteor.setTimeout(processPhotos, 1000 * 60);
+		console.log("No photos left to process, waiting 60 seconds...");
+	}
+}
+
+function processPhoto(photo, buffer, cb) {
+	var error;
+	
+	// we need to do two things, lets do them in parallel, but make sure both
+	// are done before we call the callback since the callback can only be
+	// called once
+
+    // this will only execute after both jobs are done, passing through one
+    // of the errors from the two jobs, if there was an error
+	var done = _.after(2, function() {
+		if(cb) cb(error);
+	})
+	
+	processPhotoExif(photo, buffer, function(err) {
+		if(err) error = err;
+		done();
+	});
+	
+	processPhotoThumb(photo, buffer, function(err) {
+		if(err) error = err;
+		done();
+	})
+}
+
+// extract EXIF data from photo
+function processPhotoExif(photo, buffer, cb) {
+	try {
+		new ExifImage({image: buffer}, function (error, image) {
+			if (error) {
+				console.log('EXIF Error: '+error.message);
+				if(cb) cb(error);
+				return;
+			}
+		
+			var keys = {
+				key: photo.key,
+				etag: photo.etag,
+				modified: photo.modified,
+				size: photo.size,
+				processed: true
+			}
+			
+			if(image.gps && image.gps.GPSLatitude && image.gps.GPSLongitude) {
+				var lat = image.gps.GPSLatitude;
+				var lng = image.gps.GPSLongitude;
+				
+				if(lat.components == 3) {
+					keys.lat = (lat.value[0] + 
+						(lat.value[1] / 60) + 
+						(lat.value[2] / 60 / 60)) * 
+						(image.gps.GPSLatitudeRef.value == 'N' ? 1 : -1)
+				}
+				
+				if(lat.components == 2) {
+					keys.lat = (lat.value[0] + 
+					(lat.value[1] / 60)) * 
+					(image.gps.GPSLatitudeRef.value == 'N' ? 1 : -1)
+				}
+				
+				if(lng.components == 3) {
+					keys.lng = (lng.value[0] + 
+					(lng.value[1] / 60) + 
+					(lng.value[2] / 60 / 60)) *
+					(image.gps.GPSLongitudeRef.value == 'E' ? 1 : -1)
+				}
+				
+				if(lng.components == 2) {
+					keys.lng = (lng.value[0] +
+					(lng.value[1] / 60)) *
+					(image.gps.GPSLongitudeRef.value == 'E' ? 1 : -1)
+				}
+				
+				console.log("Coords: "+keys.lat+","+keys.lng)
+			}
+			
+			if(image.exif && image.exif.DateTimeOriginal) {
+				var bits;
+				bits = image.exif.DateTimeOriginal.value.split(" ")
+				
+				var date = bits[0].split(":")
+				var time = bits[1].split(":")
+				
+				keys.createdAt = new Date(date[0], date[1], date[2], time[0], time[1], time[2], 0);
+											
+				console.log("Time: "+keys.createdAt)
+			}
+			
+			Photos.update(photo._id, keys);
+			
+			if(cb) cb();
+		});
+	} catch (error) {
+		console.log('EXIF Error: '+error);
+		if(cb) cb(error);
+		return;
+	}
+}
+
+function processPhotoThumb(photo, buffer, cb) {
+	try {
+		var img = new GM(buffer);
+		img.scale(356)
+		img.toBuffer(function(err, buffer) {
+			if(err) {
+				console.log('Thumbnail error: '+err);
+				if(cb) cb(err)
+				return;
+			}
+			
+			var params = {
+				Bucket: 'sdunster-europe',
+				Key: 'photos/width356/'+photo.key,
+				Body: buffer
+			}
+			
+			AWS.putObject(params, function(err, data) {
+				if(err) {
+					console.log('Thumbnail upload failed: '+err);
+					if(cb) cb(err);
+					return;
+				}
+				
+				console.log("thumbnail uploaded!"+params.Key);
+				if(cb) cb();
+			});
+			
+		});
+		
+	} catch(err) {
+		console.log('Thumbnail error: '+err);
+		if(cb) cb(err);
+		return;
 	}
 }
 
