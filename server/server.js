@@ -107,9 +107,9 @@ function syncPhotos(done) {
 			
 			var extensionRegex = /(\.|\/)(gif|jpe?g|png)$/i
 			
-			if(!extensionRegex.test(key)) {
+			//if(!extensionRegex.test(key)) {
 				continue;
-			}
+			//}
 			
 			existingKeys.push(key)
 			
