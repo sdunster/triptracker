@@ -33,7 +33,6 @@ var Map = {
 			draggable: false,
 			scrollwheel: false,
 			disableDoubleClickZoom: true,
-			//mapTypeId: google.maps.MapTypeId.TERRAIN,
 			mapTypeId: google.maps.MapTypeId.ROADMAP,
 			zoomControl: true,
 			zoomControlOptions: {

@@ -150,16 +150,13 @@ function syncPhotos(done) {
 	})
 }
 
-var maxImagesBeingProcessed = 1;
+var maxImagesBeingProcessed = 5;
 var imagesBeingProcessed = 0;
 
 function processPhotos() {
 	var earlier = new Date().getTime() - (1000*60*1);
 	
-	if(imagesBeingProcessed >= maxImagesBeingProcessed) {
-		console.log('This should not happen! '+imagesBeingProcessed)
-		return;
-	}
+	if(imagesBeingProcessed >= maxImagesBeingProcessed) return;
 	
 	// fetch some photos (based upon how many "processors" we have left
 	var remainingProcessors = maxImagesBeingProcessed - imagesBeingProcessed;
@@ -189,11 +186,6 @@ function processPhotos() {
 
 		return;
 	});
-	
-	// no photos to process, wait 1 minute before trying again, only if this is the last thread
-	if(photos.count() == 0 && imagesBeingProcessed == 0) {
-		Meteor.setTimeout(processPhotos, 1000 * 60);
-	}
 }
 
 function processPhoto(photo, buffer, cb) {
@@ -335,6 +327,13 @@ Meteor.startup(function () {
 	syncPhotos(function(error) {
 		processPhotos();
 	}) // wait until photo sync is done before starting photo process
+	
+	// sync photos DB with S3 every 15 mins
+	Meteor.setInterval(function() {
+		syncPhotos(function(error) {
+			processPhotos();
+		}) // wait until photo sync is done before starting photo process
+	}, 1000 * 60 * 15);
 	
 	// resync every 15 mins
 	Meteor.setInterval(syncCheckins, 1000 * 60 * 15);
