@@ -160,6 +160,7 @@ function processPhotos() {
 	
 	// fetch some photos (based upon how many "processors" we have left
 	var remainingProcessors = maxImagesBeingProcessed - imagesBeingProcessed;
+	console.log("remaining processors: "+remainingProcessors);
 	var photos = Photos.find({processed: false, processStartTime: {$lt: earlier}}, {limit: remainingProcessors});
 	var count = Math.min(photos.count(), remainingProcessors);
 	
