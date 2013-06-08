@@ -165,8 +165,10 @@ function processPhotos() {
 	
 	imagesBeingProcessed += Math.min(photos.count(), remainingProcessors);
 
-	// start up the "jobs" for each photo, marking each as in-progress	
+	// start up the "jobs" for each photo, marking each as in-progress
+	var i = 0;
 	photos.forEach(function(photo) {
+		console.log(photo.key+"-"+i);
 		Photos.update(photo._id, {$set: {processStartTime: (new Date()).getTime()}})
 		var key = 'photos/original/'+photo.key;
 
@@ -269,11 +271,9 @@ function processPhotoExif(photo, buffer, cb) {
 				var date = bits[0].split(":")
 				var time = bits[1].split(":")
 				
-				keys.createdAt = new Date(date[0], date[1], date[2], time[0], time[1], time[2], 0);
-				console.log(photo.key + ": "+keys.createdAt)
+				keys.createdAt = new Date(date[0], date[1]-1, date[2], time[0], time[1], time[2], 0);
 			} else {
 				console.log("NO EXIF DATE: "+photo.key)
-				console.log(image.exif);
 			}
 			
 			Photos.update(photo._id, keys);
