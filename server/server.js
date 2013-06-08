@@ -107,9 +107,9 @@ function syncPhotos(done) {
 			
 			var extensionRegex = /(\.|\/)(gif|jpe?g|png)$/i
 			
-			//if(!extensionRegex.test(key)) {
+			if(!extensionRegex.test(key)) {
 				continue;
-			//}
+			}
 			
 			existingKeys.push(key)
 			
@@ -262,6 +262,8 @@ function processPhotoExif(photo, buffer, cb) {
 				}
 			}
 			
+			console.log(image.exif);
+			
 			if(image.exif && image.exif.DateTimeOriginal) {
 				var bits;
 				bits = image.exif.DateTimeOriginal.value.split(" ")
@@ -270,6 +272,10 @@ function processPhotoExif(photo, buffer, cb) {
 				var time = bits[1].split(":")
 				
 				keys.createdAt = new Date(date[0], date[1], date[2], time[0], time[1], time[2], 0);
+				console.log(photo.key + ": "+keys.createdAt)
+			} else {
+				console.log("NO EXIF DATE: "+photo.key)
+				console.log(image.exif);
 			}
 			
 			Photos.update(photo._id, keys);
