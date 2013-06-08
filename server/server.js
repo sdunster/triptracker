@@ -168,7 +168,7 @@ function processPhotos() {
 	// start up the "jobs" for each photo, marking each as in-progress
 	var i = 0;
 	photos.forEach(function(photo) {
-		console.log(photo.key+"-"+i);
+		console.log(photo.key+"-"+i++);
 		Photos.update(photo._id, {$set: {processStartTime: (new Date()).getTime()}})
 		var key = 'photos/original/'+photo.key;
 
