@@ -261,9 +261,7 @@ function processPhotoExif(photo, buffer, cb) {
 					(image.gps.GPSLongitudeRef.value == 'E' ? 1 : -1)
 				}
 			}
-			
-			console.log(image.exif);
-			
+						
 			if(image.exif && image.exif.DateTimeOriginal) {
 				var bits;
 				bits = image.exif.DateTimeOriginal.value.split(" ")
