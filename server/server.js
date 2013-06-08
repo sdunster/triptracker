@@ -153,8 +153,10 @@ function syncPhotos(done) {
 var maxImagesBeingProcessed = 5;
 var imagesBeingProcessed = 0;
 var pidCount = 0;
+var processCount = 0;
 
 function processPhotos() {
+	var process = processCount++;
 	var earlier = new Date().getTime() - (1000*60*1);
 	
 	if(imagesBeingProcessed >= maxImagesBeingProcessed) return;
@@ -169,7 +171,7 @@ function processPhotos() {
 	// start up the "jobs" for each photo, marking each as in-progress
 	photos.forEach(function(photo) {
 		var pid = pidCount++;
-		console.log("Start: "+photo.key+"-"+pid);
+		console.log("Start: "+photo.key+"-"+pid+"-"+process);
 		Photos.update(photo._id, {$set: {processStartTime: (new Date()).getTime()}})
 		var key = 'photos/original/'+photo.key;
 
@@ -182,13 +184,11 @@ function processPhotos() {
 			}
 		
 			processPhoto(photo, data.Body, function(err) {
-				console.log("End: "+photo.key+"-"+pid);
+				console.log("End: "+photo.key+"-"+pid+"-"+process);
 				imagesBeingProcessed--;
 				Meteor.setTimeout(processPhotos, 0);
 			});			
 		})
-
-		return;
 	});
 }
 
