@@ -154,7 +154,6 @@ var maxImagesBeingProcessed = 5;
 var imagesBeingProcessed = 0;
 
 function processPhotos() {
-	var process = processCount++;
 	var earlier = new Date().getTime() - (1000*60*1);
 	
 	if(imagesBeingProcessed >= maxImagesBeingProcessed) return;
