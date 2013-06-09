@@ -152,8 +152,6 @@ function syncPhotos(done) {
 
 var maxImagesBeingProcessed = 5;
 var imagesBeingProcessed = 0;
-var pidCount = 0;
-var processCount = 0;
 
 function processPhotos() {
 	var process = processCount++;
@@ -163,15 +161,16 @@ function processPhotos() {
 	
 	// fetch some photos (based upon how many "processors" we have left
 	var remainingProcessors = maxImagesBeingProcessed - imagesBeingProcessed;
+	imagesBeingProcessed = maxImagesBeingProcessed;
 	var photos = Photos.find({processed: false, processStartTime: {$lt: earlier}}, {limit: remainingProcessors});
 	var count = Math.min(photos.count(), remainingProcessors);
-	
-	imagesBeingProcessed += Math.min(photos.count(), remainingProcessors);
+
+	// if we got less photos from DB than we have processors then we
+	// can free some
+	imagesBeingProcessed -= remainingProcessors - count;
 
 	// start up the "jobs" for each photo, marking each as in-progress
 	photos.forEach(function(photo) {
-		var pid = pidCount++;
-		console.log("Start: "+photo.key+"-"+pid+"-"+process+"-"+imagesBeingProcessed);
 		Photos.update(photo._id, {$set: {processStartTime: (new Date()).getTime()}})
 		var key = 'photos/original/'+photo.key;
 
@@ -184,7 +183,6 @@ function processPhotos() {
 			}
 		
 			processPhoto(photo, data.Body, function(err) {
-				console.log("End: "+photo.key+"-"+pid+"-"+process+"-"+imagesBeingProcessed);
 				imagesBeingProcessed--;
 				Meteor.setTimeout(processPhotos, 0);
 			});			
