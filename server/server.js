@@ -171,7 +171,7 @@ function processPhotos() {
 	// start up the "jobs" for each photo, marking each as in-progress
 	photos.forEach(function(photo) {
 		var pid = pidCount++;
-		console.log("Start: "+photo.key+"-"+pid+"-"+process);
+		console.log("Start: "+photo.key+"-"+pid+"-"+process+"-"+imagesBeingProcessed);
 		Photos.update(photo._id, {$set: {processStartTime: (new Date()).getTime()}})
 		var key = 'photos/original/'+photo.key;
 
@@ -184,7 +184,7 @@ function processPhotos() {
 			}
 		
 			processPhoto(photo, data.Body, function(err) {
-				console.log("End: "+photo.key+"-"+pid+"-"+process);
+				console.log("End: "+photo.key+"-"+pid+"-"+process+"-"+imagesBeingProcessed);
 				imagesBeingProcessed--;
 				Meteor.setTimeout(processPhotos, 0);
 			});			
