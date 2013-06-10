@@ -327,6 +327,22 @@ Template.entries.photo = function() {
 	return this.type == "photo";
 }
 
+Template.checkin.rendered = function() {
+	$(this).find('a.img').fancybox({
+		closeBtn  : false,
+		
+		openEffect : 'elastic',
+		openSpeed  : 150,
+
+		closeEffect : 'elastic',
+		closeSpeed  : 150,
+		
+		helpers : {
+			buttons	: {}
+		},
+	});
+}
+
 Template.checkin.id = function() {
 	return this.id;
 }
@@ -373,11 +389,13 @@ Template.checkin.hasPhoto = function () {
 }
 
 Template.checkin.thumb = function () {
+	return "/test.jpg";
 	var photo = this.photos.items[0];
 	return photo.prefix + "width380" + photo.suffix
 }
 
 Template.checkin.photo = function () {
+	return "/test.jpg";
 	var photo = this.photos.items[0];
 	return photo.prefix + "original" + photo.suffix
 }
@@ -395,9 +413,11 @@ Template.photo.key = function() {
 }
 
 Template.photo.thumb = function() {
+	return "/test.jpg";
 	return "http://europe-cdn.sdunster.com/photos/width356/"+this.key;
 }
 
 Template.photo.photo = function() {
+	return "/test.jpg";
 	return "http://europe-cdn.sdunster.com/photos/original/"+this.key;
 }
