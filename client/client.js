@@ -272,7 +272,7 @@ Meteor.startup(function () {
 				return;
 			}
 			
-			Session.set('limit', limit + 50);
+			Session.set('limit', limit + 20);
 		}
 	});
 	$(window).resize(updateSelection);
