@@ -24,15 +24,15 @@ Map = {
 		if(this.map)
 			google.maps.event.addListener(this.map, 'zoom_changed', handler);	
 	},
-	init: function() {
-		var self = this;
-		
+	init: function() {		
 		var script = document.createElement('script')
 		script.type = 'text/javascript';
 		script.src = 'http://maps.googleapis.com/maps/api/js?key=AIzaSyCecLqoAWxbOQgLwbLpvOGK9Ei4hnwDUZI&sensor=false&callback=Map.googleReady';
 		document.body.appendChild(script);
 	},
-	googleReady: function() {	
+	googleReady: function() {
+		var self = this;
+
 		var opts = {
 			center: new google.maps.LatLng(48, -10),
 			zoom: 15,
