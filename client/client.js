@@ -249,12 +249,41 @@ var recenter = function() {
 	}
 }
 
+var numPhotos = 0;
+var numCheckins = 0;
+
 Meteor.startup(function () {
+	// to start with only show 20 items
+	Session.set('limit', 20);
+	
 	Map.init();
 	Map.onZoom(recenter);
 
 	$(window).scroll(updateSelection);
+	$(window).scroll(function() {
+		var scroll = $(window).scrollTop();
+		var length = $(document).height();
+		var pageHeight = $(window).height();
+		
+		if(scroll >= length - (pageHeight * 5)) {
+			var limit = Session.get('limit');
+			
+			if(limit >= numPhotos + numCheckins) {
+				return;
+			}
+			
+			Session.set('limit', limit + 50);
+		}
+	});
 	$(window).resize(updateSelection);
+	
+	Meteor.autorun(function() {
+		numPhotos = Photos.find({}).count();
+	})
+	
+	Meteor.autorun(function() {
+		numCheckins = Checkins.find({}).count();
+	})
 	
 	Meteor.autorun(function() {
 		if(CheckinSubscription.ready() && PhotoSubscription.ready()) {
@@ -270,13 +299,14 @@ Meteor.startup(function () {
  *********************************/
 
 Template.entries.entries = function () {
+	var limit = Session.get('limit');
 	
 	// would be nice to do this without storing the entire contents of the DB in memory...
 	var checkins = Checkins.find({}, {sort: [["createdAt", "desc"]]}).fetch();
 	var photos = Photos.find({}, {sort: [["createdAt", "desc"]]}).fetch();
 	var entries = [];
 	
-	for(var i = 0, j = 0; i < checkins.length || j < photos.length; ) {
+	for(var i = 0, j = 0; (i < checkins.length || j < photos.length) && entries.length < limit; ) {
 		if(i >= checkins.length) {
 			doPhoto();
 			continue;
@@ -306,7 +336,7 @@ Template.entries.entries = function () {
 			entries[entries.length] = photo;
 		}
 	}
-	
+
 	return entries;
 }
 
@@ -389,13 +419,11 @@ Template.checkin.hasPhoto = function () {
 }
 
 Template.checkin.thumb = function () {
-	return "/test.jpg";
 	var photo = this.photos.items[0];
 	return photo.prefix + "width380" + photo.suffix
 }
 
 Template.checkin.photo = function () {
-	return "/test.jpg";
 	var photo = this.photos.items[0];
 	return photo.prefix + "original" + photo.suffix
 }
@@ -413,11 +441,9 @@ Template.photo.key = function() {
 }
 
 Template.photo.thumb = function() {
-	return "/test.jpg";
 	return "http://europe-cdn.sdunster.com/photos/width356/"+this.key;
 }
 
 Template.photo.photo = function() {
-	return "/test.jpg";
 	return "http://europe-cdn.sdunster.com/photos/original/"+this.key;
 }

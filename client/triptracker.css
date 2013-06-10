@@ -146,4 +146,5 @@ ul.sidebar>li.checkin article img {
 
 ul.sidebar>li.photo article img {
 	display: block;
+	max-width: 356px;
 }
