@@ -1,7 +1,7 @@
 var CheckinSubscription = Meteor.subscribe("checkins")
 var PhotoSubscription = Meteor.subscribe("photos")
 
-var Map = {
+Map = {
 	map: null,
 	checkinMarkers: {},
 	photoMarkers: {},
@@ -21,11 +21,17 @@ var Map = {
 			new google.maps.Point(12, 35));
 	},
 	onZoom: function(handler) {
-		google.maps.event.addListener(this.map, 'zoom_changed', handler);	
+		if(this.map)
+			google.maps.event.addListener(this.map, 'zoom_changed', handler);	
 	},
 	init: function() {
 		var self = this;
 		
+		var script = document.createElement('script')
+		script.type = 'text/javascript';
+		script.src = 'http://maps.googleapis.com/maps/api/js?key=AIzaSyCecLqoAWxbOQgLwbLpvOGK9Ei4hnwDUZI&sensor=false&callback=Map.googleReady';
+	},
+	googleReady: function() {	
 		var opts = {
 			center: new google.maps.LatLng(48, -10),
 			zoom: 15,
@@ -57,7 +63,10 @@ var Map = {
 		})
 	},
 	center: function(lat, lng, cb) {
-	    var scale = Math.pow(2,Map.map.getZoom());
+		if(!this.map)
+			return;
+		
+	    var scale = Math.pow(2,this.map.getZoom());
 		var offsetx = -($('ul.sidebar').width() / 2) / scale;
 		var self = this;
 
@@ -112,6 +121,9 @@ var Map = {
 		return marker;
 	},
 	updateMarkers: function() {
+		if(!this.map)
+			return;
+		
 		var checkins = Checkins.find({}, {sort: [["createdAt", "desc"]]})
 		var photos = Photos.find({}, {sort:[["createdAt","desc"]]})
 		var venueIds = [];
