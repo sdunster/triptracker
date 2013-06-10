@@ -39,18 +39,20 @@ Meteor.publish("photos", function() {
 })
 
 var app = __meteor_bootstrap__.app;
-var router = connect.middleware.router(function(route) {
-	route.get('/login', function(req, res) {
-		res.writeHead(303, {'Location': foursquare.getAuthClientRedirectUrl() })
-		res.end()
+if("router" in connect.middleware) {
+	var router = connect.middleware.router(function(route) {
+		route.get('/login', function(req, res) {
+			res.writeHead(303, {'Location': foursquare.getAuthClientRedirectUrl() })
+			res.end()
+		})
+		
+		route.post('/4sqpush', function(req, res) {
+			syncCheckins()
+			res.end('OK')
+		})
 	})
-	
-	route.post('/4sqpush', function(req, res) {
-		syncCheckins()
-		res.end('OK')
-	})
-})
-app.use(router)
+	app.use(router)
+}
 
 function upsertCheckin(checkin) {
 // return true if insert, else update

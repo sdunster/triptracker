@@ -30,6 +30,7 @@ Map = {
 		var script = document.createElement('script')
 		script.type = 'text/javascript';
 		script.src = 'http://maps.googleapis.com/maps/api/js?key=AIzaSyCecLqoAWxbOQgLwbLpvOGK9Ei4hnwDUZI&sensor=false&callback=Map.googleReady';
+		document.body.appendChild(script);
 	},
 	googleReady: function() {	
 		var opts = {
