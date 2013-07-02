@@ -429,6 +429,22 @@ Template.checkin.photo = function () {
 	return photo.prefix + "original" + photo.suffix
 }
 
+Template.checkin.thumbWidth = function() {
+	var w = this.photos.items[0].width;
+	var h = this.photos.items[0].height;
+	if(w > 380)
+		return 380;
+	return w;
+}
+
+Template.checkin.thumbHeight = function() {
+	var w = this.photos.items[0].width;
+	var h = this.photos.items[0].height;
+	if(w > 380)
+		return Math.round(h / (w / 380));
+	return h;
+}
+
 Template.checkin.address = function () {
 	return this.venue.address
 }

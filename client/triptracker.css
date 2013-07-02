@@ -142,9 +142,11 @@ ul.sidebar>li.checkin article img {
 	position: relative;
 	left: -20px;
 	max-width: 380px;
+	background-color: #dddddd;
 }
 
 ul.sidebar>li.photo article img {
 	display: block;
 	max-width: 356px;
+	background-color: #dddddd;
 }
