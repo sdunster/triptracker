@@ -55,7 +55,7 @@
       <article>
         {{comment}}
         {{#if hasPhoto}}
-          <a href="{{photo}}" class="img" data-fancybox-group="photo"><img src="{{thumb}}" width="{{thumbWidth}}" height="{{thumbHeight}}" /></a>
+          <a href="{{photo}}" class="img" data-fancybox-group="photo"><img src="{{thumb}}" {{dimensions}} /></a>
         {{/if}}
       </article>
     {{/if}}
@@ -65,7 +65,7 @@
 <template name="photo">
   <li class="photo" data-key="{{key}}">
     <article>
-      <a href="{{photo}}" class="img" data-fancybox-group="photo"><img src="{{thumb}}" /></a>
+      <a href="{{photo}}" class="img" data-fancybox-group="photo"><img src="{{thumb}}" {{dimensions}} /></a>
     </article>
   </li>
 </template>

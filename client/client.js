@@ -429,20 +429,17 @@ Template.checkin.photo = function () {
 	return photo.prefix + "original" + photo.suffix
 }
 
-Template.checkin.thumbWidth = function() {
+Template.checkin.dimensions = function() {
 	var w = this.photos.items[0].width;
 	var h = this.photos.items[0].height;
+	
+	if(!w || !w)
+		return '';
+	
 	if(w > 380)
-		return 380;
-	return w;
-}
-
-Template.checkin.thumbHeight = function() {
-	var w = this.photos.items[0].width;
-	var h = this.photos.items[0].height;
-	if(w > 380)
-		return Math.round(h / (w / 380));
-	return h;
+		return 'width="'+380+'" height="'+Math.round(h / (w / 380))+'"';
+	
+	return 'width="'+w+'" height="'+h+'"';
 }
 
 Template.checkin.address = function () {
@@ -463,4 +460,16 @@ Template.photo.thumb = function() {
 
 Template.photo.photo = function() {
 	return "http://europe-cdn.sdunster.com/photos/original/"+this.key;
+}
+
+Template.photo.dimensions = function() {
+	var w = this.width;
+	var h = this.height;
+	if(!w || !w)
+		return '';
+	
+	if(w > 365)
+		return 'width="'+365+'" height="'+Math.round(h / (w / 365))+'"';
+	
+	return 'width="'+w+'" height="'+h+'"';
 }
