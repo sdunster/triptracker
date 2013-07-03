@@ -194,13 +194,13 @@ function processPhotos() {
 function processPhoto(photo, buffer, cb) {
 	var error;
 	
-	// we need to do two things, lets do them in parallel, but make sure both
+	// we need to do multiple things, lets do them in parallel, but make sure both
 	// are done before we call the callback since the callback can only be
 	// called once
 
     // this will only execute after both jobs are done, passing through one
-    // of the errors from the two jobs, if there was an error
-	var done = _.after(2, function() {
+    // of the errors from the jobs, if there was an error
+	var done = _.after(3, function() {
 		if(cb) cb(error);
 		console.log("Processed photo: "+photo.key)
 	})
@@ -211,6 +211,11 @@ function processPhoto(photo, buffer, cb) {
 	});
 	
 	processPhotoThumb(photo, buffer, function(err) {
+		if(err) error = err;
+		done();
+	})
+	
+	processPhotoDimensions(photo, buffer, function(err) {
 		if(err) error = err;
 		done();
 	})
@@ -288,13 +293,37 @@ function processPhotoExif(photo, buffer, cb) {
 	}
 }
 
+function processPhotoDimensions(photo, buffer, cb) {
+	try {
+		var img = new GM(buffer);
+		
+		// store the size in the db
+		img.size(function(err, value) {
+			if(err) {
+				console.log('Dimensions error: '+err);
+				if(cb) cb(err);
+			}
+			
+			Photos.update(photo._id, {width: value.width, height: value.height});
+			if(cb) cb();
+		});
+		
+	} catch(err) {
+		console.log('Dimensions error: '+err);
+		if(cb) cb(err);
+		return;
+	}
+}
+
 function processPhotoThumb(photo, buffer, cb) {
 	try {
 		var img = new GM(buffer);
+		
 		img
+		.autoOrient()
 		.scale(356)
 		.noProfile()
-		.quality(50)
+		.quality(75)
 		.toBuffer(function(err, buffer) {
 			if(err) {
 				console.log('Thumbnail error: '+err);
