@@ -299,13 +299,15 @@ function processPhotoDimensions(photo, buffer, cb) {
 		
 		// store the size in the db
 		img.size(function(err, value) {
-			if(err) {
-				console.log('Dimensions error: '+err);
-				if(cb) cb(err);
-			}
-			
-			Photos.update(photo._id, {width: value.width, height: value.height});
-			if(cb) cb();
+			Fiber(function() {
+				if(err) {
+					console.log('Dimensions error: '+err);
+					if(cb) cb(err);
+				}
+				
+				Photos.update(photo._id, {width: value.width, height: value.height});
+				if(cb) cb();
+			}).run();
 		});
 		
 	} catch(err) {
@@ -325,28 +327,29 @@ function processPhotoThumb(photo, buffer, cb) {
 		.noProfile()
 		.quality(75)
 		.toBuffer(function(err, buffer) {
-			if(err) {
-				console.log('Thumbnail error: '+err);
-				if(cb) cb(err)
-				return;
-			}
-			
-			var params = {
-				Bucket: 'sdunster-europe',
-				Key: 'photos/width356/'+photo.key,
-				Body: buffer
-			}
-			
-			AWS.putObject(params, function(err, data) {
+			Fiber(function() {
 				if(err) {
-					console.log('Thumbnail upload failed: '+err);
-					if(cb) cb(err);
+					console.log('Thumbnail error: '+err);
+					if(cb) cb(err)
 					return;
 				}
 				
-				if(cb) cb();
-			});
-			
+				var params = {
+					Bucket: 'sdunster-europe',
+					Key: 'photos/width356/'+photo.key,
+					Body: buffer
+				}
+				
+				AWS.putObject(params, function(err, data) {
+					if(err) {
+						console.log('Thumbnail upload failed: '+err);
+						if(cb) cb(err);
+						return;
+					}
+					
+					if(cb) cb();
+				});
+			}).run();
 		});
 		
 	} catch(err) {
