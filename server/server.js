@@ -70,7 +70,11 @@ function upsertCheckin(checkin) {
 }
 
 function syncCheckins() {
-	foursquare.Users.getCheckins('self', {limit: 250, afterTimestamp: 1362549600},	accessToken, function(error, results) {
+	foursquare.Users.getCheckins('self', {
+		limit: 250,
+		afterTimestamp: Config.foursquare.startTimestamp,
+		beforeTimestamp: Config.foursquare.endTimestamp
+	}, accessToken, function(error, results) {
 		Fiber(function() {
 			var updated = 0
 			var inserted = 0
